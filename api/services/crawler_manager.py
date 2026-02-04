@@ -204,7 +204,16 @@ class CrawlerManager:
 
     def _build_command(self, config: CrawlerStartRequest) -> list:
         """Build main.py command line arguments"""
-        cmd = ["uv", "run", "python", "main.py"]
+        # In Docker environment, use python directly to avoid uv creating new venv
+        # In local environment with uv, still support uv run
+        import shutil
+        uv_available = shutil.which("uv") is not None
+        in_docker = os.path.exists("/.dockerenv")
+        
+        if uv_available and not in_docker:
+            cmd = ["uv", "run", "python", "main.py"]
+        else:
+            cmd = ["python", "main.py"]
 
         cmd.extend(["--platform", config.platform.value])
         cmd.extend(["--lt", config.login_type.value])
@@ -228,7 +237,11 @@ class CrawlerManager:
         if config.cookies:
             cmd.extend(["--cookies", config.cookies])
 
-        cmd.extend(["--headless", "true" if config.headless else "false"])
+        # In Docker environment, force headless mode (no GUI available)
+        if in_docker:
+            cmd.extend(["--headless", "true"])
+        else:
+            cmd.extend(["--headless", "true" if config.headless else "false"])
 
         return cmd
 

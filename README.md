@@ -117,6 +117,25 @@
 
 ### 📦 Python 包安装
 
+# 1. 安装 uv 包管理器
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 进入项目目录
+cd MediaCrawler
+
+# 3. 同步依赖（自动创建虚拟环境）
+uv sync
+
+# 4. 安装浏览器驱动
+uv run playwright install
+
+# 5. 运行爬虫
+uv run main.py --platform xhs --lt qrcode --type search
+
+# 或启动 WebUI
+uv run uvicorn api.main:app --port 8080
+
+
 ```shell
 # 进入项目目录
 cd MediaCrawler

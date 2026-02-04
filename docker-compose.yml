@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # MediaCrawler 主服务
+  mediacrawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediacrawler
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # WebUI 端口
+    volumes:
+      # 持久化数据
+      - ./data:/app/data
+      - ./logs:/app/logs
+      # 浏览器缓存（登录态保存）
+      - ./browser_data:/app/browser_data
+      # 配置文件（可选，方便外部修改配置）
+      - ./config:/app/config
+      # 挂载代码目录，方便开发调试（生产环境可以去掉）
+      - ./api:/app/api
+      - ./media_platform:/app/media_platform
+      - ./tools:/app/tools
+      - ./base:/app/base
+      - ./cache:/app/cache
+      - ./proxy:/app/proxy
+      - ./store:/app/store
+      - ./cmd_arg:/app/cmd_arg
+      - ./main.py:/app/main.py
+    environment:
+      # 基础配置
+      - TZ=Asia/Shanghai
+      # Docker 环境配置（禁用 CDP 模式，因为容器内没有 Chrome/Edge）
+      - ENABLE_CDP_MODE=False
+      - HEADLESS=True
+      # 强制 headless 模式（Docker 环境无图形界面）
+      - FORCE_HEADLESS=True
+      # 数据库配置（如果使用 MySQL）
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=mediacrawler
+      - MYSQL_PASSWORD=mediacrawler_password
+      - MYSQL_DB=media_crawler
+      # Redis 配置（如果使用 Redis）
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis_password
+      - REDIS_DB=0
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - mediacrawler_network
+    # 资源限制（可选）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 4G
+
+  # MySQL 数据库（可选）
+  mysql:
+    image: mysql:8.0
+    container_name: mediacrawler_mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=media_crawler
+      - MYSQL_USER=mediacrawler
+      - MYSQL_PASSWORD=mediacrawler_password
+      - TZ=Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # Ensure MySQL listens on all interfaces so external hosts can connect
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --bind-address=0.0.0.0
+    networks:
+      - mediacrawler_network
+
+  # Redis 缓存（可选）
+  redis:
+    image: redis:7-alpine
+    container_name: mediacrawler_redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: redis-server --requirepass redis_password --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - mediacrawler_network
+
+  # MongoDB（可选，如果需要）
+  # mongodb:
+  #   image: mongo:7
+  #   container_name: mediacrawler_mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=admin_password
+  #     - MONGO_INITDB_DATABASE=media_crawler
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - mediacrawler_network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  # mongodb_data:
+  #   driver: local
+
+networks:
+  mediacrawler_network:
+    driver: bridge

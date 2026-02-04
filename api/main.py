@@ -84,9 +84,19 @@ async def health_check():
 async def check_environment():
     """Check if MediaCrawler environment is configured correctly"""
     try:
-        # Run uv run main.py --help command to check environment
+        # Detect if uv is available, otherwise use python directly
+        import shutil
+        uv_available = shutil.which("uv") is not None
+        
+        if uv_available:
+            # Run uv run main.py --help command to check environment
+            cmd = ["uv", "run", "main.py", "--help"]
+        else:
+            # Use python directly (for Docker environment)
+            cmd = ["python", "main.py", "--help"]
+            
         process = await asyncio.create_subprocess_exec(
-            "uv", "run", "main.py", "--help",
+            *cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd="."  # Project root directory
@@ -100,7 +110,8 @@ async def check_environment():
             return {
                 "success": True,
                 "message": "MediaCrawler environment configured correctly",
-                "output": stdout.decode("utf-8", errors="ignore")[:500]  # Truncate to first 500 characters
+                "output": stdout.decode("utf-8", errors="ignore")[:500],  # Truncate to first 500 characters
+                "runtime": "uv" if uv_available else "python"
             }
         else:
             error_msg = stderr.decode("utf-8", errors="ignore") or stdout.decode("utf-8", errors="ignore")
@@ -115,11 +126,11 @@ async def check_environment():
             "message": "Environment check timeout",
             "error": "Command execution exceeded 30 seconds"
         }
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         return {
             "success": False,
-            "message": "uv command not found",
-            "error": "Please ensure uv is installed and configured in system PATH"
+            "message": "Command not found",
+            "error": f"Neither uv nor python command found: {str(e)}"
         }
     except Exception as e:
         return {
