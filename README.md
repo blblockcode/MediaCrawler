@@ -120,6 +120,9 @@
 # 1. 安装 uv 包管理器
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# 1.2 win 
+powershell -c "irm https://astral.sh/uv/install.ps1 | more"
+
 # 2. 进入项目目录
 cd MediaCrawler
 
