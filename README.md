@@ -117,11 +117,22 @@
 
 ### 📦 Python 包安装
 
-# 1. 安装 uv 包管理器
+# 1. 安装 uv 包管理器（macOS/Linux）
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 1.2 win 
-powershell -c "irm https://astral.sh/uv/install.ps1 | more"
+# 1.2 配置环境变量（macOS/Linux，可选但推荐）
+# 将以下内容添加到 ~/.bashrc 或 ~/.zshrc 文件末尾
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # 如果使用 bash
+# 或
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # 如果使用 zsh
+# 然后执行 source ~/.bashrc 或 source ~/.zshrc 使其生效
+
+# 1.3 安装 uv 包管理器（Windows）
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 1.4 配置环境变量（Windows，可选但推荐）
+# 执行后需重启终端生效，之后可直接使用 uv 命令
+[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';C:\Users\你的用户名\.local\bin', 'User')
 
 # 2. 进入项目目录
 cd MediaCrawler
