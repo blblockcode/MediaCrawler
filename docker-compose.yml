@@ -96,6 +96,20 @@ services:
     networks:
       - mediacrawler_network
 
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: mediacrawler_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mediacrawler
+    networks:
+      - mediacrawler_network
+
   # MongoDB（可选，如果需要）
   # mongodb:
   #   image: mongo:7
